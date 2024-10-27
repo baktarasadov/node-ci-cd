@@ -1,48 +1,33 @@
-name: Node.JS CI/CD
+name: Deploy to Render
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main # Yalnız main branch-də dəyişikliklər olduqda işə düşəcək
 
 jobs:
-  test:
-    name: Test
+  build-and-deploy:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [16.x]
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3 # was "v2" before
-        with:
-          fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: Use Node.JS ${{ matrix.node-version }}
-        uses: actions/setup-node@v3 # was "v2" before s
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: "16" # Tətbiqinizin tələb etdiyi Node versiyası
 
-      - name: NPM install, build and test
+      - name: Install dependencies
         run: |
           npm install
-          npm start 
-          npm test
-        # env:
-        #   DBHOST: ${{ secrets.DBHOST }}
-        #   TOKEN_SECRET: ${{ secrets.TOKEN_SECRET }}
-        #   JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
 
-  # Heavily modified deploy job to fit render.com
-  deploy:
-    name: Deploy
-    needs: [test] # Our tests must pass in order to run the deploy job
-    runs-on: ubuntu-latest
+      - name: Run tests
+        run: |
+          npm test  # Testlər varsa işləyəcək, yoxdursa bu addımı dəyişdirə bilərsiniz
 
-    steps:
-      - name: Deploy to production
-        uses: johnbeynon/render-deploy-action@v0.0.8
-        with:
-          service-id: ${{ secrets.SERVICE_ID }} # Can be found as part of the Deploy Hook
-          api-key: ${{ secrets.RENDER_API_KEY }} # Create your API key in Render Dashboard > Account Settings
+      - name: Deploy to Render
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }} # Secret istifadə olunur
+        run: |
+          curl -X POST "$RENDER_DEPLOY_HOOK_URL"
