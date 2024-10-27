@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "ci-cd": "file:",
     "express": "^4.21.1"
   },
   "devDependencies": {
